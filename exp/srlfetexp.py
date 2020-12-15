@@ -272,3 +272,43 @@ def __save_srl_models(models, file_prefix):
         filepath = '{}-{}.pth'.format(file_prefix, i)
         torch.save(model.state_dict(), filepath)
     logging.info('model saved to {}'.format(file_prefix))
+
+
+def load_train_models(device, gres, model_file_prefix):
+    word_vec_dim = gres.token_vecs.shape[1]
+    lstm_dim, mlp_hidden_dim, type_embed_dim = 0, 0, 0
+    models = list()
+    for i in range(3):
+        model_params_file = '{}-{}.pth'.format(model_file_prefix, i)
+        logging.info('load model from {}'.format(model_params_file))
+        trained_params = torch.load(model_params_file)
+        lstm_dim = trained_params['lstm1.weight_hh_l0'].size()[1]
+        mlp_hidden_dim = trained_params['mlp.linear_map1.weight'].size()[0]
+        type_embed_dim = trained_params['type_embeddings'].size()[0]
+        model = SRLFET(device, gres.type_vocab, gres.type_id_dict, word_vec_dim, lstm_dim, mlp_hidden_dim,
+                       type_embed_dim)
+        model.load_state_dict(trained_params)
+        if device.type == 'cuda':
+            model = model.cuda(device.index)
+        models.append(model)
+    print('lstm_dim={} mlp_hidden_dim={} type_embed_dim={}'.format(lstm_dim, mlp_hidden_dim, type_embed_dim))
+    return models
+
+
+def eval_trained(device, gres: expdata.ResData, model_file_prefix, mentions_file, sents_file, srl_results_file,
+                 dep_tags_file, single_type_path, output_preds_file):
+    all_samples = samples_from_txt(gres.token_id_dict, gres.unknown_token_id, gres.type_id_dict,
+                                   mentions_file, sents_file, dep_tags_file, srl_results_file, use_all=True)
+    samples_list = __split_samples_by_arg_idx(all_samples)
+    sample_type_ids_list = __get_full_type_ids_of_samples(gres.parent_type_ids_dict, all_samples)
+    true_labels_dict = {s[0]: [gres.type_vocab[l] for l in type_ids] for type_ids, s in zip(
+        sample_type_ids_list, all_samples)}
+    print([len(samples) for samples in samples_list], 'samples')
+
+    models = load_train_models(device, gres, model_file_prefix)
+
+    acc, maf1, mif1, result_objs = __eval(gres, models, samples_list, true_labels_dict,
+                                          single_type_path=single_type_path)
+    print(acc, maf1, mif1)
+
+    datautils.save_json_objs(result_objs, output_preds_file)

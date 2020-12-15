@@ -22,6 +22,13 @@ def read_json_objs(filename):
     return objs
 
 
+def save_json_objs(objs, output_file):
+    fout = open(output_file, 'w', encoding='utf-8', newline='\n')
+    for x in objs:
+        fout.write('{}\n'.format(json.dumps(x)))
+    fout.close()
+
+
 def load_pickle_data(filename):
     with open(filename, 'rb') as f:
         return pickle.load(f)

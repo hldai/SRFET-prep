@@ -32,6 +32,11 @@ BBN_FILES = {
     'test-srl': join(DATA_DIR, 'bbn-afet/bbn-test-sents-srl.txt'),
     'test-sents-dep': join(DATA_DIR, 'bbn-afet/bbn-test-sents-tok-texts-dep.txt'),
     'test-pos-tags': join(DATA_DIR, 'bbn-afet/bbn-test-sents-tok-texts-pos.txt'),
+    'train-mentions': join(DATA_DIR, 'bbn-afet/bbn-dfet-train-mentions-aug.json'),
+    'train-sents': join(DATA_DIR, 'bbn-afet/bbn-dfet-train-sents.json'),
+    'train-pos-tags': join(DATA_DIR, 'bbn-afet/bbn-dfet-train-sents-tok-texts-pos.txt'),
+    'train-sents-dep': join(DATA_DIR, 'bbn-afet/bbn-dfet-train-sents-tok-texts-dep.txt'),
+    'train-srl': join(DATA_DIR, 'bbn-afet/bbn-dfet-train-sents-srl.txt'),
     'srl-train-data-prefix': join(DATA_DIR, 'weakdata/wiki20151002-anchor-srl16'),
     'type-vocab': join(DATA_DIR, 'bbn-afet/bbn-type-vocab.txt'),
 }

@@ -17,7 +17,8 @@ def __train1():
 
     train_samples_file = os.path.join(config.DATA_DIR, 'bbn/bbn-dev-man-labeled.txt')
     train_base_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-train-bertsep-preds.txt')
-    train_srl_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-train-srl4-preds.txt')
+    train_srl_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-train-srl-preds.txt')
+    # train_srl_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-train-pretrained-srl-preds.txt')
     train_hyp_file = os.path.join(config.DATA_DIR, 'bbn/bbn-train-all-fmm-hypext.txt')
     train_verif_hyp_file = os.path.join(config.DATA_DIR, 'bbn/bbn-train-all-fmm-hypext.txt')
     train_hypext_logits_file = os.path.join(config.DATA_DIR,
@@ -34,7 +35,8 @@ def __train1():
     test_mentions_file = config.BBN_FILES['test-mentions']
     test_sents_file = config.BBN_FILES['test-sents']
     test_base_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-test-bertsep-preds.txt')
-    test_srl_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-test-srl4-preds.txt')
+    test_srl_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-test-srl-preds.txt')
+    # test_srl_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-test-pretrained-srl-preds.txt')
     test_hyp_preds_file = os.path.join(config.DATA_DIR, 'bbn/bbn-test-all-fmm-hypext.txt')
     test_verif_hypext_file = os.path.join(config.DATA_DIR, 'bbn/bbn-test-all-fmm-hypext.txt')
     test_hypext_logits_file = os.path.join(config.DATA_DIR, 'bbn/bert-tmhypextbbn-bbn-test-all.txt')
