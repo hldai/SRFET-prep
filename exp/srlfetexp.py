@@ -297,15 +297,15 @@ def load_train_models(device, gres, model_file_prefix):
 
 def eval_trained(device, gres: expdata.ResData, model_file_prefix, mentions_file, sents_file, srl_results_file,
                  dep_tags_file, single_type_path, output_preds_file):
+    models = load_train_models(device, gres, model_file_prefix)
+
     all_samples = samples_from_txt(gres.token_id_dict, gres.unknown_token_id, gres.type_id_dict,
                                    mentions_file, sents_file, dep_tags_file, srl_results_file, use_all=True)
     samples_list = __split_samples_by_arg_idx(all_samples)
     sample_type_ids_list = __get_full_type_ids_of_samples(gres.parent_type_ids_dict, all_samples)
-    true_labels_dict = {s[0]: [gres.type_vocab[l] for l in type_ids] for type_ids, s in zip(
+    true_labels_dict = {s[0]: [gres.type_vocab[tid] for tid in type_ids] for type_ids, s in zip(
         sample_type_ids_list, all_samples)}
     print([len(samples) for samples in samples_list], 'samples')
-
-    models = load_train_models(device, gres, model_file_prefix)
 
     acc, maf1, mif1, result_objs = __eval(gres, models, samples_list, true_labels_dict,
                                           single_type_path=single_type_path)

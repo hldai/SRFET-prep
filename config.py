@@ -21,8 +21,9 @@ FIGER_FILES = {
     'test-sents-dep': join(DATA_DIR, 'figer-afet/figer-test-sents-tok-texts-dep.txt'),
     'test-pos-tags': join(DATA_DIR, 'figer-afet/figer-test-sents-tok-texts-pos.txt'),
     'presample-train-data-prefix': join(DATA_DIR, 'figer-afet/weakdata/enwiki20151002-anchor-figer-pre0_1'),
-    'srl-train-data-prefix': join(DATA_DIR, 'weakdata/enwiki20151002-anchor-srl-pre0_1'),
-    'vfet-train-data-prefix': join(DATA_DIR, 'weakdata/wiki20151002-anchor-srl16'),
+    # 'srl-train-data-prefix': join(DATA_DIR, 'weakdata/enwiki20151002-anchor-srl-pre0_1'),
+    'srl-train-data-prefix': join(DATA_DIR, 'weakdata/wiki20151002-anchor-srl16'),
+    # 'vfet-train-data-prefix': join(DATA_DIR, 'weakdata/wiki20151002-anchor-srl16'),
     'type-vocab': join(DATA_DIR, 'figer-afet/figer-type-vocab.txt'),
 }
 
