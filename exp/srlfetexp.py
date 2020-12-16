@@ -8,7 +8,7 @@ from utils import datautils, fetutils, utils
 
 class TrainConfig:
     def __init__(self, learning_rate=0.001, batch_size=64, n_iter=100, loss_name='mm', pos_margin=1.0, neg_margin=1.0,
-                 pos_scale=1.0, neg_scale=1.0):
+                 pos_scale=1.0, neg_scale=1.0, schedule_lr=False):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.n_iter = n_iter
@@ -17,6 +17,7 @@ class TrainConfig:
         self.neg_margin = neg_margin
         self.pos_scale = pos_scale
         self.neg_scale = neg_scale
+        self.schedule_lr = schedule_lr
 
 
 def __split_samples_by_arg_idx(samples):
@@ -182,6 +183,7 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, manual_val_f
 
     word_vec_dim = gres.token_vecs.shape[1]
     models, optimizers = list(), list()
+    lr_schedulers = list() if train_config.schedule_lr else None
     for i in range(3):
         model = SRLFET(device, gres.type_vocab, gres.type_id_dict, word_vec_dim, lstm_dim, mlp_hidden_dim,
                        type_embed_dim)
@@ -190,6 +192,9 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, manual_val_f
         models.append(model)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         optimizers.append(optimizer)
+        if lr_schedulers is not None:
+            lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1000, gamma=0.7)
+            lr_schedulers.append(lr_scheduler)
     print('start training ...')
     losses = list()
     best_dev_acc = -1
@@ -200,8 +205,9 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, manual_val_f
         for mention_arg_idx, samples in enumerate(train_samples_list):
             model, optimizer = models[mention_arg_idx], optimizers[mention_arg_idx]
             model.train()
+            lr_scheduler = None if lr_schedulers is None else lr_schedulers[mention_arg_idx]
             loss_val = __train_step(model, gres.parent_type_ids_dict, gres.token_vecs, samples, mention_arg_idx,
-                                    i, batch_size, loss_obj, optimizer)
+                                    i, batch_size, loss_obj, optimizer, lr_scheduler)
             losses.append(loss_val)
 
         if (i + 1) % 1000 == 0:
@@ -226,7 +232,7 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, manual_val_f
 
 
 def __train_step(model: SRLFET, parent_type_ids_dict, token_vecs, samples, mention_arg_idx, step, batch_size,
-                 loss_obj: exputils.Loss, optimizer):
+                 loss_obj: exputils.Loss, optimizer, lr_scheduler):
     device = model.device
     n_batches = len(samples) // batch_size
     step %= n_batches
@@ -245,7 +251,8 @@ def __train_step(model: SRLFET, parent_type_ids_dict, token_vecs, samples, menti
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0, float('inf'))
     optimizer.step()
-    # scheduler.step()
+    if lr_scheduler is not None:
+        lr_scheduler.step()
     return loss.data.cpu().numpy()
 
 
