@@ -36,6 +36,56 @@ def __get_full_type_ids_of_samples(parent_type_ids_dict, samples):
     return type_ids_list
 
 
+def samples_from_man_labeled(
+        token_id_dict, unknown_token_id, type_id_dict, mentions_file, sents_file, dep_tags_file,
+        srl_results_file, man_label_file):
+    labeled_samples = datautils.real_manual_label_file(man_label_file, None)
+    mentions = datautils.read_json_objs(mentions_file)
+    sents = datautils.read_json_objs(sents_file)
+    sent_dict = {sent['sent_id']: (i, sent) for i, sent in enumerate(sents)}
+    dep_tag_seq_list = None
+    if dep_tags_file is not None:
+        with open(dep_tags_file, encoding='utf-8') as f:
+            dep_tag_seq_list = [datautils.next_sent_dependency(f) for _ in range(len(sents))]
+    srl_results_list = datautils.read_srl_results(srl_results_file)
+    print(len(sents), len(srl_results_list))
+
+    mid_manual_label_dict = {x[0]: x[2] for x in labeled_samples}
+    samples = list()
+    for m in mentions:
+        manual_labels = mid_manual_label_dict.get(m['mention_id'], None)
+        if manual_labels is None:
+            continue
+        # print(m)
+        # print(manual_labels)
+        # exit()
+
+        mspan = m['span']
+        sent_idx, sent = sent_dict[m['sent_id']]
+        sent_tokens = sent['text'].split(' ')
+        dep_tag_seq = dep_tag_seq_list[sent_idx] if dep_tag_seq_list is not None else None
+        srl_results = srl_results_list[sent_idx]
+        matched_tag_list, matched_tag_spans_list = utils.match_srl_to_mentions_all(
+            sent_tokens, srl_results, mspan, dep_tag_seq)
+
+        if not matched_tag_list:
+            continue
+
+        # type_labels = m.get('labels', ['/PERSON'])
+        type_ids = [type_id_dict[t] for t in manual_labels]
+        for matched_tag, matched_tag_spans in zip(matched_tag_list, matched_tag_spans_list):
+            matched_tag_pos = int(matched_tag[-1:])
+            srl_info = (utils.get_srl_tag_span(matched_tag_spans, 'V'),
+                        utils.get_srl_tag_span(matched_tag_spans, 'ARG0'),
+                        utils.get_srl_tag_span(matched_tag_spans, 'ARG1'),
+                        utils.get_srl_tag_span(matched_tag_spans, 'ARG2'), matched_tag_pos)
+            sent_token_ids = [token_id_dict.get(token, unknown_token_id) for token in sent_tokens]
+
+            sample = (m['mention_id'], m['str'], mspan[0], mspan[1], None, type_ids, sent_token_ids, srl_info)
+            samples.append(sample)
+    return samples
+
+
 def samples_from_txt(token_id_dict, unknown_token_id, type_id_dict, mentions_file, sents_file, dep_tags_file,
                      srl_results_file, use_all):
     mentions = datautils.read_json_objs(mentions_file)
@@ -81,11 +131,20 @@ def samples_from_txt(token_id_dict, unknown_token_id, type_id_dict, mentions_fil
     return samples
 
 
-def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, test_file_tup, lstm_dim, mlp_hidden_dim,
-                 type_embed_dim, train_config: TrainConfig, single_type_path, save_model_file_prefix=None):
+def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, manual_val_file_tup, test_file_tup, lstm_dim,
+                 mlp_hidden_dim, type_embed_dim, train_config: TrainConfig, single_type_path,
+                 save_model_file_prefix=None):
     train_samples = datautils.load_pickle_data(train_pkl)
     dev_samples = datautils.load_pickle_data(dev_pkl)
     print(len(train_samples))
+
+    if manual_val_file_tup is not None:
+        val_mentions_file, val_sents_file, val_dep_file, val_srl_file, val_manual_label_file = manual_val_file_tup
+        dev_samples = samples_from_man_labeled(
+            gres.token_id_dict, gres.unknown_token_id, gres.type_id_dict, val_mentions_file, val_sents_file,
+            val_dep_file, val_srl_file, val_manual_label_file)
+        print('{} dev from manual'.format(len(dev_samples)))
+    # exit()
 
     # loss_obj = exputils.BinMaxMarginLoss()
     if train_config.loss_name == 'mm':
@@ -104,7 +163,7 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, test_file_tu
 
     dev_samples_list = __split_samples_by_arg_idx(dev_samples)
     dev_sample_type_ids_list = __get_full_type_ids_of_samples(gres.parent_type_ids_dict, dev_samples)
-    dev_true_labels_dict = {s[0]: [gres.type_vocab[l] for l in type_ids] for type_ids, s in zip(
+    dev_true_labels_dict = {s[0]: [gres.type_vocab[tid] for tid in type_ids] for type_ids, s in zip(
         dev_sample_type_ids_list, dev_samples)}
     # dev_true_labels_dict = {s.mention_id: [gres.type_vocab[l] for l in s.labels] for s in dev_samples}
     print([len(samples) for samples in dev_samples_list], 'validation samples')
@@ -137,6 +196,7 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, test_file_tu
     n_steps_per_iter = len(train_samples) // batch_size
     n_steps = n_iter * n_steps_per_iter
     for i in range(n_steps):
+        # print(i)
         for mention_arg_idx, samples in enumerate(train_samples_list):
             model, optimizer = models[mention_arg_idx], optimizers[mention_arg_idx]
             model.train()
@@ -198,7 +258,7 @@ def __eval(gres: expdata.ResData, models: List[SRLFET], samples_list, true_label
         model.eval()
         device = model.device
         n_batches = (len(samples) + batch_size - 1) // batch_size
-        print('{} batches'.format(n_batches))
+        # print('{} batches'.format(n_batches))
         for i in range(n_batches):
             batch_beg, batch_end = i * batch_size, min((i + 1) * batch_size, len(samples))
             samples_batch = samples[batch_beg:batch_end]

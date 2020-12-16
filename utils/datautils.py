@@ -94,3 +94,39 @@ def read_srl_results(filename):
         srl_results_list.append(srl_results)
     f.close()
     return srl_results_list
+
+
+def real_manual_label_file(filename, type_id_dict):
+    from utils import fetutils
+
+    f = open(filename, encoding='utf-8')
+    samples = list()
+    for i, line in enumerate(f):
+        mention_id = int(line.strip())
+        sent_str = next(f).strip()
+        # next(f)
+        labels_str = next(f).strip()
+        if ': ' in labels_str:
+            labels_str = next(f).strip()
+        next(f)
+        if not labels_str or labels_str == '////':
+            continue
+
+        labels = labels_str.split(',')
+        for t in labels:
+            if not t.startswith('/'):
+                print(i, mention_id, t, line)
+            assert t.startswith('/')
+        labels = fetutils.get_full_types(labels)
+
+        label_ids = None
+        if type_id_dict is not None:
+            try:
+                label_ids = [type_id_dict[t] for t in labels]
+            except KeyError:
+                print(i, mention_id, labels, line)
+                exit()
+
+        samples.append((mention_id, sent_str, labels, label_ids))
+    f.close()
+    return samples
