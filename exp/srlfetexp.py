@@ -379,3 +379,4 @@ def eval_trained(device, gres: expdata.ResData, model_file_prefix, mentions_file
     print(acc, maf1, mif1)
 
     datautils.save_json_objs(result_objs, output_preds_file)
+    print('results saved to {}'.format(output_preds_file))
