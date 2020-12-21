@@ -49,8 +49,8 @@ def __eval():
     datafiles = config.FIGER_FILES if dataset == 'figer' else config.BBN_FILES
     word_vecs_file = config.WIKI_FETEL_WORDVEC_FILE
     model_file_prefix = os.path.join(config.DATA_DIR, 'models/srl3-{}'.format(dataset))
-    # sub_set = 'test'
-    sub_set = 'train'
+    sub_set = 'test'
+    # sub_set = 'train'
 
     if sub_set == 'test':
         mentions_file = datafiles['test-mentions']

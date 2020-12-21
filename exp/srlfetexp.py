@@ -8,7 +8,7 @@ from utils import datautils, fetutils, utils
 
 class TrainConfig:
     def __init__(self, learning_rate=0.001, batch_size=64, n_iter=100, loss_name='mm', pos_margin=1.0, neg_margin=1.0,
-                 pos_scale=1.0, neg_scale=1.0, schedule_lr=False):
+                 pos_scale=1.0, neg_scale=1.0, schedule_lr=False, n_steps=-1):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.n_iter = n_iter
@@ -18,6 +18,7 @@ class TrainConfig:
         self.pos_scale = pos_scale
         self.neg_scale = neg_scale
         self.schedule_lr = schedule_lr
+        self.n_steps = n_steps
 
 
 def __split_samples_by_arg_idx(samples):
@@ -200,6 +201,8 @@ def train_srlfet(device, gres: expdata.ResData, train_pkl, dev_pkl, manual_val_f
     best_dev_acc = -1
     n_steps_per_iter = len(train_samples) // batch_size
     n_steps = n_iter * n_steps_per_iter
+    if train_config.n_steps > -1:
+        n_steps = train_config.n_steps
     for i in range(n_steps):
         # print(i)
         for mention_arg_idx, samples in enumerate(train_samples_list):
