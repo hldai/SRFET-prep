@@ -17,7 +17,7 @@ def __train3():
 
     margin = 1.0
     train_config = srlfetexp.TrainConfig(
-        pos_margin=margin, neg_margin=margin, neg_scale=1.0, batch_size=128, schedule_lr=True)
+        pos_margin=margin, neg_margin=margin, neg_scale=1.0, batch_size=128, schedule_lr=True, n_steps=70000)
 
     lstm_dim = 250
     mlp_hidden_dim = 500
@@ -150,7 +150,7 @@ def __train():
     init_universal_logging(log_file, mode='a', to_stdout=True)
     logging.info('logging to {}'.format(log_file))
 
-    train_config = srlfetexp.TrainConfig(loss_name='mm', neg_scale=0.1, n_steps=50000)
+    train_config = srlfetexp.TrainConfig(loss_name='mm', neg_scale=0.1, n_steps=70000)
 
     lstm_dim = 250
     mlp_hidden_dim = 500

@@ -44,38 +44,39 @@ def __eval1():
 
 
 def __eval():
-    dataset = 'figer'
-    # dataset = 'bbn'
+    # dataset = 'figer'
+    dataset = 'bbn'
     datafiles = config.FIGER_FILES if dataset == 'figer' else config.BBN_FILES
     word_vecs_file = config.WIKI_FETEL_WORDVEC_FILE
-    model_file_prefix = os.path.join(config.DATA_DIR, 'models/srl3-{}'.format(dataset))
-    sub_set = 'test'
+    model_file_prefix = os.path.join(config.DATA_DIR, 'models/srl-{}'.format(dataset))
+    # sub_set = 'test'
     # sub_set = 'train'
-
-    if sub_set == 'test':
-        mentions_file = datafiles['test-mentions']
-        sents_file = datafiles['test-sents']
-        srl_file = datafiles['test-srl']
-        dep_file = datafiles['test-sents-dep']
-    else:
-        if dataset == 'bbn':
-            mentions_file = datafiles['train-mentions']
-            sents_file = datafiles['train-sents']
-            srl_file = datafiles['train-srl']
-            dep_file = datafiles['train-sents-dep']
+    sub_sets = ['test', 'train']
+    for sub_set in sub_sets:
+        if sub_set == 'test':
+            mentions_file = datafiles['test-mentions']
+            sents_file = datafiles['test-sents']
+            srl_file = datafiles['test-srl']
+            dep_file = datafiles['test-sents-dep']
         else:
-            mentions_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-mentions.json')
-            sents_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-sents.json')
-            srl_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-srl.txt')
-            dep_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-tok-dep.txt')
+            if dataset == 'bbn':
+                mentions_file = datafiles['train-mentions']
+                sents_file = datafiles['train-sents']
+                srl_file = datafiles['train-srl']
+                dep_file = datafiles['train-sents-dep']
+            else:
+                mentions_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-mentions.json')
+                sents_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-sents.json')
+                srl_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-srl.txt')
+                dep_file = os.path.join(config.DATA_DIR, 'figer/wiki-valcands-figer-tok-dep.txt')
 
-    output_preds_file = os.path.join(
-        config.DATA_DIR, '{}/{}-{}-srl-preds.txt'.format(dataset, dataset, sub_set))
-    single_type_path = True if dataset == 'bbn' else False
+        output_preds_file = os.path.join(
+            config.DATA_DIR, '{}/{}-{}-srl-preds.txt'.format(dataset, dataset, sub_set))
+        single_type_path = True if dataset == 'bbn' else False
 
-    gres = expdata.ResData(datafiles['type-vocab'], word_vecs_file)
-    srlfetexp.eval_trained(device, gres, model_file_prefix, mentions_file, sents_file, srl_file, dep_file,
-                           single_type_path, output_preds_file)
+        gres = expdata.ResData(datafiles['type-vocab'], word_vecs_file)
+        srlfetexp.eval_trained(device, gres, model_file_prefix, mentions_file, sents_file, srl_file, dep_file,
+                               single_type_path, output_preds_file)
 
 
 if __name__ == '__main__':
